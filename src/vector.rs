@@ -1,6 +1,7 @@
+use serde_derive::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Vector3D {
     pub x: f64,
     pub y: f64,
