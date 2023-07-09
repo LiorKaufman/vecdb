@@ -2,12 +2,19 @@ mod database;
 mod logs;
 mod vector;
 use crate::database::Database;
-use crate::logs::{LogEntry, Operation};
 use crate::vector::Vector3D;
 
 fn main() {
-    let mut db = Database::new("log.txt".to_string());
+    let log_path = String::from("./log.txt");
+    let mut db = Database::new(log_path.clone());
 
+    // Attempt to load previous data
+    match db.load_from_log() {
+        Ok(_) => println!("Loaded data from log"),
+        Err(e) => println!("Couldn't load data from log: {}", e),
+    }
+
+    // Define some vectors
     let v1 = Vector3D {
         x: 1.0,
         y: 2.0,
@@ -24,27 +31,34 @@ fn main() {
         z: 9.0,
     };
 
-    // Insert vectors
-    db.set(v1.clone());
-    db.set(v2.clone());
-    db.set(v3.clone());
+    // Add some vectors
+    db.set(&v1, true);
+    db.set(&v2, true);
+    db.set(&v3, true);
 
-    // Check contents of the log
-    db.flush_log().expect("Unable to flush log");
-    // At this point, your log file should contain three insert operations
+    // Try retrieving a vector
+    let retrieved_vector = db.get(1).unwrap();
+    println!("Retrieved vector: {:?}", retrieved_vector);
 
     // Update a vector
-    let v1_updated = Vector3D {
-        x: 10.0,
-        y: 11.0,
-        z: 12.0,
-    };
-    db.update(0, &v1_updated);
+    let v_update = retrieved_vector.cross(&v2);
+
+    if db.update(0, &v_update, true) {
+        println!("Updated vector at index 0");
+    } else {
+        println!("Couldn't update vector at index 0");
+    }
 
     // Delete a vector
-    db.delete(2);
+    if db.delete(2, true) {
+        println!("Deleted vector at index 2");
+    } else {
+        println!("Couldn't delete vector at index 2");
+    }
 
-    // Check contents of the log again
-    db.flush_log().expect("Unable to flush log");
-    // Your log file should now additionally contain an update and a delete operation
+    // Flush log
+    match db.flush_log() {
+        Ok(_) => println!("Flushed log"),
+        Err(e) => println!("Error flushing log: {}", e),
+    }
 }
